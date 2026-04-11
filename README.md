@@ -6,7 +6,7 @@ A small data pipeline that ingests NYC 311 data, models it into structured table
 2. Store raw data in Postgres
 3. Clean / standardize data into staging tables
 4. Model data into fact/dimension tables 
-5. Analytics: run SQL analytics 
+5. Analytics: run SQL analytics and investigation (explain → validate → sanity check)
 6. (optional) Run semantic analysis using an LLM
 
             ┌──────────────────────┐
@@ -62,6 +62,28 @@ star_schema.sql
 validate_star_schema.sql
 -> NEXT: analytics
 
+# Data Quality Check
+
+raw
+- duplicate unique_key: 0
+- null unique_key: 0
+- null created_date: 0
+
+staging
+- rows dropped: 12
+- invalid closed < created: 3
+- null borough after cleaning: 0
+
+schema/fact/dim
+- missing location_fk: 0
+- missing complaint_type_fk: 0
+- fact row count vs staging row count: match / mismatch
+
+analytics
+- distinct created dates: 1
+- pct concentrated on top date: 1.00
+
+
 # Design goals
 - Keep the pipeline manually runnable end-to-end
 - Make reruns safe (idempotent where possible)
@@ -73,3 +95,12 @@ validate_star_schema.sql
 - data quality tracking / documentation, e.g. null dates in original
 # Future extension
 - Automate daily ingestion and analytics after the manual workflow is stable
+
+# Stack Exposure
+Analytics Engineering:
+✅ Modeling (fact + dimensions)
+✅ Basic metrics (aggregations)
+
+Data quality / testing
+Transformation layering (dbt-style)
+Final “analytics output” shaping
