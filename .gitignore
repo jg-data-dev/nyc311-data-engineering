@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
+
+# Data outputs (optional - if you generate files)
+*.csv
+*.parquet
+
+# Jupyter (if you ever use)
+.ipynb_checkpoints/
+
+# Local config (if you add later)
+config.py
