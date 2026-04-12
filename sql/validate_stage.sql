@@ -180,10 +180,8 @@ SELECT
   complaint_type,
   status,
   created_date,
-  closed_date,
-  invalid_close_before_create,
-  raw_json
+  closed_date
 FROM stg_311_requests
 WHERE invalid_close_before_create = true
 ORDER BY created_date
-LIMIT 20;
+LIMIT 3;

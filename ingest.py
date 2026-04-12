@@ -2,12 +2,12 @@ import os
 import requests
 import psycopg
 from datetime import datetime
-from config import DB_CONFIG
+from config import DATABASE_URL
 
 
 API_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json"
 PAGE_SIZE = 1000
-MAX_PAGES = 3
+MAX_PAGES = 100
 
 RAW_COLUMNS = [
     "unique_key",
@@ -227,7 +227,7 @@ def fetch_page(offset: int, limit: int = PAGE_SIZE):
     return resp.json()
 
 def main(max_pages: int = MAX_PAGES):
-    with psycopg.connect(**DB_CONFIG) as conn:
+    with psycopg.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             total = 0
             for page_num in range(max_pages):

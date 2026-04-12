@@ -2,7 +2,7 @@
 -- STAR SCHEMA FOR NYC 311
 -- Grain: 1 row in fact_311_complaint = 1 complaint record
 -- =========================================================
-
+\timing on
 -- -------------------------
 -- Drop existing tables
 -- -------------------------
@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS dim_date CASCADE;
 -- =========================================================
 -- DIMENSIONS
 -- =========================================================
+\echo 'Create Dim Tables'
 
 CREATE TABLE dim_date (
     date_id         INTEGER PRIMARY KEY,   -- YYYYMMDD
@@ -34,6 +35,7 @@ CREATE TABLE dim_date (
 
 CREATE TABLE dim_location (
     location_id                 BIGSERIAL PRIMARY KEY,
+    location_key                TEXT NOT NULL UNIQUE,
     city                        TEXT,
     borough                     TEXT,
     landmark                    TEXT,
@@ -51,14 +53,7 @@ CREATE TABLE dim_location (
     x_coordinate_state_plane    TEXT,
     y_coordinate_state_plane    TEXT,
     community_board             TEXT,
-    council_district            TEXT,
-    UNIQUE (
-        city, borough, landmark, street_name, incident_zip, park_borough,
-        cross_street_1, cross_street_2, intersection_street_1, intersection_street_2,
-        incident_address, park_facility_name, latitude, longitude,
-        x_coordinate_state_plane, y_coordinate_state_plane,
-        community_board, council_district
-    )
+    council_district            TEXT
 );
 
 CREATE TABLE dim_agency (
@@ -89,6 +84,7 @@ CREATE TABLE dim_channel (
 -- =========================================================
 -- FACT TABLES
 -- =========================================================
+\echo 'Create Fact Tables'
 
 CREATE TABLE fact_311_complaint (
     complaint_key                BIGSERIAL PRIMARY KEY,
@@ -119,6 +115,7 @@ CREATE TABLE fact_311_complaint_text (
 -- =========================================================
 -- INDEXES
 -- =========================================================
+\echo 'Create Index'
 
 CREATE INDEX idx_fact_311_created_date_id
     ON fact_311_complaint(created_date_id);
@@ -147,6 +144,7 @@ CREATE INDEX idx_fact_311_channel_id
 -- =========================================================
 -- LOAD DIMENSIONS
 -- =========================================================
+\echo 'Load Dim Tables'
 
 -- dim_date
 INSERT INTO dim_date (
@@ -193,6 +191,7 @@ ON CONFLICT (date_id) DO NOTHING;
 
 -- dim_location
 INSERT INTO dim_location (
+    location_key,
     city,
     borough,
     landmark,
@@ -213,6 +212,7 @@ INSERT INTO dim_location (
     council_district
 )
 SELECT DISTINCT
+    location_key,
     city,
     borough,
     landmark,
@@ -232,7 +232,8 @@ SELECT DISTINCT
     community_board,
     council_district
 FROM stg_311_requests
-ON CONFLICT DO NOTHING;
+WHERE location_key IS NOT NULL
+ON CONFLICT (location_key) DO NOTHING;
 
 -- dim_agency
 INSERT INTO dim_agency (
@@ -275,6 +276,7 @@ ON CONFLICT DO NOTHING;
 -- =========================================================
 -- LOAD FACT TABLE
 -- =========================================================
+\echo 'Load Fact Table'
 
 INSERT INTO fact_311_complaint (
     unique_key,
@@ -321,24 +323,7 @@ SELECT
 
 FROM stg_311_requests s
 LEFT JOIN dim_location l
-    ON l.city IS NOT DISTINCT FROM s.city
-   AND l.borough IS NOT DISTINCT FROM s.borough
-   AND l.landmark IS NOT DISTINCT FROM s.landmark
-   AND l.street_name IS NOT DISTINCT FROM s.street_name
-   AND l.incident_zip IS NOT DISTINCT FROM s.incident_zip
-   AND l.park_borough IS NOT DISTINCT FROM s.park_borough
-   AND l.cross_street_1 IS NOT DISTINCT FROM s.cross_street_1
-   AND l.cross_street_2 IS NOT DISTINCT FROM s.cross_street_2
-   AND l.intersection_street_1 IS NOT DISTINCT FROM s.intersection_street_1
-   AND l.intersection_street_2 IS NOT DISTINCT FROM s.intersection_street_2
-   AND l.incident_address IS NOT DISTINCT FROM s.incident_address
-   AND l.park_facility_name IS NOT DISTINCT FROM s.park_facility_name
-   AND l.latitude IS NOT DISTINCT FROM s.latitude
-   AND l.longitude IS NOT DISTINCT FROM s.longitude
-   AND l.x_coordinate_state_plane IS NOT DISTINCT FROM s.x_coordinate_state_plane
-   AND l.y_coordinate_state_plane IS NOT DISTINCT FROM s.y_coordinate_state_plane
-   AND l.community_board IS NOT DISTINCT FROM s.community_board
-   AND l.council_district IS NOT DISTINCT FROM s.council_district
+    ON l.location_key = s.location_key
 
 LEFT JOIN dim_agency a
     ON a.agency IS NOT DISTINCT FROM s.agency
@@ -361,6 +346,8 @@ ON CONFLICT (unique_key) DO NOTHING;
 -- =========================================================
 -- LOAD FACT TEXT TABLE
 -- =========================================================
+
+\echo 'Load Text Fact Table'
 
 INSERT INTO fact_311_complaint_text (
     unique_key,
