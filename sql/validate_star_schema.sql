@@ -137,4 +137,4 @@ JOIN dim_complaint_type ct
 GROUP BY
     d.year, d.month, l.borough, ct.complaint_type
 ORDER BY complaint_cnt DESC
-LIMIT 25;
+LIMIT 3;

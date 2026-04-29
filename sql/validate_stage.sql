@@ -1,90 +1,57 @@
--- validate_stage.sql
+-- psql -d nyc311 -f sql/validate_stage.sql
 
--- 1) row count: raw vs stage
-SELECT 'row_count_raw' AS check_name, COUNT(*)::text AS result
+\echo '== Stage null & unique key check =='
+\set table_name 'stg_311_requests'
+\i sql/validate_common.sql
+
+
+\echo '== Stage row count vs raw =='
+SELECT 'row_count_raw' AS check_name, COUNT(*) AS result
 FROM raw_311_requests
 
 UNION ALL
 
-SELECT 'row_count_stage' AS check_name, COUNT(*)::text AS result
+SELECT 'row_count_stage' AS check_name, COUNT(*) AS result
+FROM stg_311_requests;
+
+SELECT
+  'stage_vs_raw' AS check_name,
+  COUNT(*) - (SELECT COUNT(*) FROM raw_311_requests) AS diff
 FROM stg_311_requests;
 
 
--- 2) duplicate unique_key in stage
-SELECT
-  'duplicate_unique_key_count' AS check_name,
-  COUNT(*)::text AS result
-FROM (
-  SELECT unique_key
-  FROM stg_311_requests
-  GROUP BY unique_key
-  HAVING COUNT(*) > 1
-) t;
-
-
--- 3) null / blank checks on important columns
-SELECT
-  'null_unique_key' AS check_name,
-  COUNT(*)::text AS result
-FROM stg_311_requests
-WHERE unique_key IS NULL
-
-UNION ALL
-
-SELECT
-  'null_created_date',
-  COUNT(*)::text
-FROM stg_311_requests
-WHERE created_date IS NULL
-
-UNION ALL
-
-SELECT
-  'null_complaint_type',
-  COUNT(*)::text
-FROM stg_311_requests
-WHERE complaint_type IS NULL
-
-UNION ALL
-
-SELECT
-  'null_status',
-  COUNT(*)::text
-FROM stg_311_requests
-WHERE status IS NULL
-
-UNION ALL
-
-SELECT
-  'null_borough',
-  COUNT(*)::text
-FROM stg_311_requests
-WHERE borough IS NULL;
-
-
--- 4) invalid close-before-create rows
+\echo '== Stage logical date checks =='
 SELECT
   'invalid_close_before_create' AS check_name,
-  COUNT(*)::text AS result
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE invalid_close_before_create = true;
 
-
--- 5) impossible raw timestamp ordering without flag
 SELECT
   'close_before_create_but_flag_false' AS check_name,
-  COUNT(*)::text AS result
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE closed_date IS NOT NULL
   AND created_date IS NOT NULL
   AND closed_date < created_date
   AND invalid_close_before_create = false;
 
+SELECT
+  'flag_true_but_close_not_before_create' AS check_name,
+  COUNT(*) AS issue_count
+FROM stg_311_requests
+WHERE invalid_close_before_create = true
+  AND NOT (
+    closed_date IS NOT NULL
+    AND created_date IS NOT NULL
+    AND closed_date < created_date
+  );
 
--- 6) valid_lat_long flag consistency
+
+\echo '== Stage lat/long logic checks =='
 SELECT
   'lat_long_present_but_flag_false' AS check_name,
-  COUNT(*)::text AS result
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE latitude IS NOT NULL
   AND longitude IS NOT NULL
@@ -96,7 +63,7 @@ UNION ALL
 
 SELECT
   'lat_long_invalid_but_flag_true',
-  COUNT(*)::text
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE (
     latitude IS NULL
@@ -107,10 +74,10 @@ WHERE (
 AND valid_lat_long = true;
 
 
--- 7) uppercase normalization spot checks
+\echo '== Stage normalization checks =='
 SELECT
   'agency_not_uppercase' AS check_name,
-  COUNT(*)::text AS result
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE agency IS NOT NULL
   AND agency <> UPPER(agency)
@@ -119,7 +86,7 @@ UNION ALL
 
 SELECT
   'borough_not_uppercase',
-  COUNT(*)::text
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE borough IS NOT NULL
   AND borough <> UPPER(borough)
@@ -128,16 +95,16 @@ UNION ALL
 
 SELECT
   'complaint_type_not_uppercase',
-  COUNT(*)::text
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE complaint_type IS NOT NULL
   AND complaint_type <> UPPER(complaint_type);
 
 
--- 8) blank strings that should have been converted to NULL
+\echo '== Stage blank-string checks =='
 SELECT
   'blank_agency_remaining' AS check_name,
-  COUNT(*)::text AS result
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE agency = ''
 
@@ -145,7 +112,7 @@ UNION ALL
 
 SELECT
   'blank_borough_remaining',
-  COUNT(*)::text
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE borough = ''
 
@@ -153,12 +120,12 @@ UNION ALL
 
 SELECT
   'blank_complaint_type_remaining',
-  COUNT(*)::text
+  COUNT(*) AS issue_count
 FROM stg_311_requests
 WHERE complaint_type = '';
 
 
--- 9) useful profiling summaries
+\echo '== Stage profiling summaries =='
 SELECT
   invalid_close_before_create,
   COUNT(*) AS row_count
@@ -174,7 +141,7 @@ GROUP BY valid_lat_long
 ORDER BY valid_lat_long;
 
 
--- 10) inspect suspicious rows if any exist
+\echo '== Suspicious close-before-create rows =='
 SELECT
   unique_key,
   complaint_type,
