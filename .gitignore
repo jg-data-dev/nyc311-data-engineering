@@ -23,3 +23,8 @@ venv/
 
 # Local config (if you add later)
 config.py
+sql/scratch.sql
+.DS_Store
+.env
+.vscode/
+analyze/outputs/

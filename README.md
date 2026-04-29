@@ -1,7 +1,9 @@
 # “What is this system and how does it work?”
 A small data pipeline that ingests NYC 311 data, models it into structured tables, and supports both SQL and semantic querying.
+Build a small municipal complaint analytics platform that supports historical analysis and daily operational monitoring, with explicit handling of messy public-sector data quality.
 
 # Workflow
+https://docs.google.com/drawings/d/1Z21zS93tueCzecsnmhSYy429R1o6FRBGrgWfdaThxGY/edit
 1. Ingest NYC 311 data from the Socrata API
 2. Store raw data in Postgres
 3. Clean / standardize data into staging tables
@@ -60,6 +62,7 @@ stage.sql
 validate_stage.sql
 star_schema.sql
 validate_star_schema.sql
+analyze.py 
 -> NEXT: analytics
 
 # Data Quality Check
@@ -90,11 +93,25 @@ analytics
 - Keep each stage conceptually separate
 
 # Next Steps
-- modelling: build tables
-- performance: experiment 1M row, incl/excl raw_json in staging
-- data quality tracking / documentation, e.g. null dates in original
+raw/probe ingestion:
+- target-date rerun deletes/reloads only that date
+- date-range rerun deletes/reloads only that range
+- max-pages mode upserts only, no delete
+
+stage:
+- rebuilds deterministically from raw/probe
+- preserves expected row count / grain
+
+star schema:
+- either full rebuild safely
+- or explicit incremental logic, not accidental append duplication
+
+analytics exports:
+- overwrite outputs, not append
+- validate totals against fact tables
+
 # Future extension
-- Automate daily ingestion and analytics after the manual workflow is stable
+- (Airflow) Automate daily ingestion and analytics after the manual workflow is stable
 
 # Stack Exposure
 Analytics Engineering:
