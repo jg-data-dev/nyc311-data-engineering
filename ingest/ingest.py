@@ -6,6 +6,7 @@ python ingest/ingest.py --max-pages 10
 python ingest/ingest.py --target-date 2026-04-25 --max-pages 1 (should be ignored)
 
 Next:
+--upsert only, consider overwrite/rebuild as options
 --target-date → always safe to rerun
 --start-date/end-date → safe partial rebuild
 """
