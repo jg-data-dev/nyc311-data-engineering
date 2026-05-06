@@ -46,3 +46,6 @@ CREATE INDEX IF NOT EXISTS idx_fct_complaint_mix_borough
 
 CREATE INDEX IF NOT EXISTS idx_fct_complaint_mix_complaint_type
     ON fct_borough_complaint_mix(complaint_type);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fct_borough_complaint_mix_unique
+    ON fct_borough_complaint_mix(borough, complaint_type);

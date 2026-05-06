@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: nyc311
+    schema: public
+    tables:
+      - name: raw_311_requests
+        description: "Raw NYC 311 requests loaded from the Socrata API. One row per unique_key."

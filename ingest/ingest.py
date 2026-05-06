@@ -1,7 +1,7 @@
 """
 Usage:
 python ingest/ingest.py --target-date 2026-04-25
-python ingest/ingest.py --start-date 2026-04-23 --end-date 2026-04-25
+python ingest/ingest.py --start-date 2026-09-16 --end-date 2026-12-31
 python ingest/ingest.py --max-pages 10
 python ingest/ingest.py --target-date 2026-04-25 --max-pages 1 (should be ignored)
 
@@ -26,7 +26,7 @@ API_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json"
 
 PAGE_SIZE = 1000
 DEFAULT_MAX_PAGES = 3
-DEFAULT_TARGET_TABLE = "raw_311_requests_probe"
+DEFAULT_TARGET_TABLE = "raw_311_requests"
 
 ALLOWED_TARGET_TABLES = {
     "raw_311_requests",

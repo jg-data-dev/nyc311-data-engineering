@@ -1,3 +1,23 @@
+# Local scratch / experimental work / run logs
+scratch/
+enrichment/
+run_pipeline.log
+
+# Environment files
+.env
+*.env
+
+
+# dbt local credentials / profiles
+profiles.yml
+.dbt/
+**/profiles.yml
+
+# dbt generated artifacts
+target/
+dbt_packages/
+logs/
+
 # Python
 __pycache__/
 *.pyc

@@ -30,7 +30,7 @@ echo "== Step 8: Compile analytics and export CSVs =="
 python -m analyze.analyze --export-csv
 
 echo "== Step 9: Validate analytics =="
-$PSQL -f analyze/validate/validate_data.sql
+$PSQL -f analyze/validate/validate_marts.sql
 
 echo "== Pipeline complete =="
 
