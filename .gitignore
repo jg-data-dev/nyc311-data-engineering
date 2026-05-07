@@ -2,6 +2,14 @@
 scratch/
 enrichment/
 run_pipeline.log
+sandbox/
+config.py
+sql/scratch.sql
+.env
+.vscode/
+analyze/outputs/
+db_experiments/
+notes/
 
 # Environment files
 .env
@@ -41,10 +49,3 @@ venv/
 # Jupyter (if you ever use)
 .ipynb_checkpoints/
 
-# Local config (if you add later)
-config.py
-sql/scratch.sql
-.DS_Store
-.env
-.vscode/
-analyze/outputs/
