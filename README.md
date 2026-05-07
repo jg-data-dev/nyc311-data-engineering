@@ -1,123 +1,107 @@
-# “What is this system and how does it work?”
-A small data pipeline that ingests NYC 311 data, models it into structured tables, and supports both SQL and semantic querying.
-Build a small municipal complaint analytics platform that supports historical analysis and daily operational monitoring, with explicit handling of messy public-sector data quality.
+# NYC 311 Data Engineering Project
 
-# Workflow
-https://docs.google.com/drawings/d/1Z21zS93tueCzecsnmhSYy429R1o6FRBGrgWfdaThxGY/edit
-1. Ingest NYC 311 data from the Socrata API
-2. Store raw data in Postgres
-3. Clean / standardize data into staging tables
-4. Model data into fact/dimension tables 
-5. Analytics: run SQL analytics and investigation (explain → validate → sanity check)
-6. (optional) Run semantic analysis using an LLM
+This repository contains a data engineering / analytics engineering project built around NYC 311 service request data.
 
-            ┌──────────────────────┐
-            │   NYC 311 API        │
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │   ingest.py          │
-            │ (API → Postgres)     │
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │ raw_311_requests     │
-            │ (source of truth)    │
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │ stage.sql / stage.py │
-            │ (clean + standardize│
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │ stg_311_requests     │
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │ fact_complaints      │
-            │ dim_* tables         │
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │ analytics queries    │   ← YOU ARE HERE
-            │ (metrics, patterns)  │
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │ output layer         │
-            │ (script / report)    │
-            └─────────┬────────────┘
-                      ↓
-            ┌──────────────────────┐
-            │ orchestration        │   ← FINAL STEP
-            │ (Airflow / cron)     │
-            └──────────────────────┘
-            
-# Automation/Orchestration
-create_tables.sql
-ingest.py
-validate_raw.sql
-stage.sql
-validate_stage.sql
-star_schema.sql
-validate_star_schema.sql
-analyze.py 
--> NEXT: analytics
+The project demonstrates an ELT-style pipeline for ingesting public-sector data, modeling it into analytical tables, and validating data quality across pipeline layers.
 
-# Data Quality Check
+## Project structure
 
-raw
-- duplicate unique_key: 0
-- null unique_key: 0
-- null created_date: 0
+```text
+nyc311-data-engineering/
+  README.md
+  SETUP.md
+  requirements.txt
 
-staging
-- rows dropped: 12
-- invalid closed < created: 3
-- null borough after cleaning: 0
+  nyc311_manual/
+    raw/
+    ingest/
+    staging/
+    warehouse/
+    analytics/
+    common/
 
-schema/fact/dim
-- missing location_fk: 0
-- missing complaint_type_fk: 0
-- fact row count vs staging row count: match / mismatch
+  nyc311_dbt/
+    models/
+    tests/
+    macros/
+    seeds/
+    snapshots/
+```
 
-analytics
-- distinct created dates: 1
-- pct concentrated on top date: 1.00
+## Two implementations
 
+This repository contains two related implementations of the same pipeline.
 
-# Design goals
-- Keep the pipeline manually runnable end-to-end
-- Make reruns safe (idempotent where possible)
-- Keep each stage conceptually separate
+### 1. `nyc311_manual/`
 
-# Next Steps
-raw/probe ingestion:
-- target-date rerun deletes/reloads only that date
-- date-range rerun deletes/reloads only that range
-- max-pages mode upserts only, no delete
+A from-scratch implementation using Python, PostgreSQL, shell scripts, and SQL validation.
 
-stage:
-- rebuilds deterministically from raw/probe
-- preserves expected row count / grain
+This version includes:
 
-star schema:
-- either full rebuild safely
-- or explicit incremental logic, not accidental append duplication
+- NYC 311 API ingestion
+- raw PostgreSQL table creation
+- staging transformations
+- warehouse facts and dimensions
+- analytics marts
+- validation checks at each layer
 
-analytics exports:
-- overwrite outputs, not append
-- validate totals against fact tables
+The manual version is useful for showing the underlying pipeline mechanics without relying on a transformation framework.
 
-# Future extension
-- (Airflow) Automate daily ingestion and analytics after the manual workflow is stable
+### 2. `nyc311_dbt/`
 
-# Stack Exposure
-Analytics Engineering:
-✅ Modeling (fact + dimensions)
-✅ Basic metrics (aggregations)
+A dbt implementation of the transformation layer.
 
-Data quality / testing
-Transformation layering (dbt-style)
-Final “analytics output” shaping
+The dbt project assumes raw NYC 311 data has already been loaded into PostgreSQL. It does not duplicate the Python ingestion layer. Instead, it rebuilds the staging, warehouse, intermediate, and mart layers using dbt models, tests, and documentation conventions.
+
+## Pipeline architecture
+
+```text
+NYC 311 Socrata API
+  ↓
+Python ingestion
+  ↓
+raw PostgreSQL table
+  ↓
+staging models
+  ↓
+warehouse facts and dimensions
+  ↓
+analytics marts
+  ↓
+validation / tests
+```
+
+## Layer meanings
+
+```text
+raw        = source-shaped landing layer
+staging    = cleaned and standardized source-shaped data
+warehouse  = reusable dimensional model: facts and dimensions
+analytics  = derived metrics, marts, and standard analytical outputs
+dbt        = production-style transformation implementation
+```
+
+## Data quality focus
+
+The project includes validation checks for issues such as:
+
+- duplicate request keys
+- missing critical fields
+- invalid timestamp order
+- missing foreign keys
+- row count mismatches across layers
+- inconsistent closed status / closed timestamp behavior
+- aggregate metric sanity checks
+
+## Skills demonstrated
+
+- Python API ingestion
+- PostgreSQL data modeling
+- ELT pipeline design
+- dbt transformations and tests
+- dimensional modeling
+- data quality validation
+- analytical mart design
+- Git-based project organization
+
+See `SETUP.md` for local setup and run instructions.

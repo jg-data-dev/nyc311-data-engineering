@@ -18,15 +18,13 @@ from datetime import datetime, timedelta
 import psycopg
 import requests
 from psycopg.types.json import Jsonb
-
-
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/nyc311")
+from config import DATABASE_URL
 
 API_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json"
 
 PAGE_SIZE = 1000
 DEFAULT_MAX_PAGES = 3
-DEFAULT_TARGET_TABLE = "raw_311_requests"
+DEFAULT_TARGET_TABLE = "raw_311_requests_probe"
 
 ALLOWED_TARGET_TABLES = {
     "raw_311_requests",

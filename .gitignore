@@ -3,7 +3,6 @@ scratch/
 enrichment/
 run_pipeline.log
 sandbox/
-config.py
 sql/scratch.sql
 .env
 .vscode/

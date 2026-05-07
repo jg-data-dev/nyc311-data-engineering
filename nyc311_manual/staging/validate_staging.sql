@@ -2,7 +2,7 @@
 
 \echo '== Stage null & unique key check =='
 \set table_name 'stg_311_requests'
-\i sql/validate_common.sql
+\i common/validate_common.sql
 
 
 \echo '== Stage row count vs raw =='

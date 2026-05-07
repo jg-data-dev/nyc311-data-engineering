@@ -1,5 +1,5 @@
 """
-python analyze/analyze.py --export-csv
+python -m analytics.analyze --export-csv
 """
 
 from __future__ import annotations
