@@ -1,14 +1,15 @@
-select
-    row_number() over (
-        order by complaint_type nulls last, descriptor nulls last, descriptor_2 nulls last
-    ) as complaint_type_id,
+{{ config(
+    indexes=[
+      {'columns': ['complaint_type_id'], 'unique': True}
+    ]
+) }}
+
+select distinct
+    complaint_type_key as complaint_type_id,
     complaint_type,
     descriptor,
     descriptor_2
-from (
-    select distinct
-        complaint_type,
-        descriptor,
-        descriptor_2
-    from {{ ref('stg_311_requests') }}
-) complaint_types
+from {{ ref('stg_311_requests') }}
+where complaint_type is not null
+   or descriptor is not null
+   or descriptor_2 is not null

@@ -17,7 +17,7 @@ clean-targets:
 models:
   nyc311_dbt:
     staging:
-      +materialized: view
+      +materialized: table
     core:
       +materialized: table
     intermediate:

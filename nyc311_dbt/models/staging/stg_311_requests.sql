@@ -1,3 +1,14 @@
+{{ config(
+    indexes=[
+      {'columns': ['unique_key'], 'unique': True},
+      {'columns': ['location_key']},
+      {'columns': ['agency_key']},
+      {'columns': ['complaint_type_key']},
+      {'columns': ['status_key']},
+      {'columns': ['channel_key']}
+    ]
+) }}
+
 with cleaned as (
     select
         unique_key,
@@ -66,6 +77,25 @@ select
         coalesce(community_board, '') || '|' ||
         coalesce(council_district, '')
     ) as location_key,
+
+    md5(
+        coalesce(agency, '<NULL>') || '|' ||
+        coalesce(agency_name, '<NULL>')
+    ) as agency_key,
+
+    md5(
+        coalesce(complaint_type, '<NULL>') || '|' ||
+        coalesce(descriptor, '<NULL>') || '|' ||
+        coalesce(descriptor_2, '<NULL>')
+    ) as complaint_type_key,
+
+    md5(
+        coalesce(status, '<NULL>')
+    ) as status_key,
+
+    md5(
+        coalesce(open_data_channel_type, '<NULL>')
+    ) as channel_key,
 
     created_date::date as created_day,
     closed_date::date as closed_day,
