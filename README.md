@@ -105,3 +105,26 @@ The project includes validation checks for issues such as:
 - Git-based project organization
 
 See `SETUP.md` for local setup and run instructions.
+
+
+## Airflow Orchestration
+Daily Ingestion DAG
+→ ensure_raw_tables
+→ reset_probe_raw
+→ ingest_daily
+→ validate_raw
+→ dbt_run
+→ dbt_test
+
+- ingest is daily ingestion, default to 2 days prior to current date, using ds (Airflow logical date), because the current day and previous day of NYC 311 source data may still be incomplete, or explicitly selected using config:
+  {
+    "target_date": "2026-05-10"
+  }
+- support testing raw table raw_311_requests_probe, but using
+  {
+      "test": true
+  }
+
+- dbt models runs on the entire selected raw table
+
+- dbt test exclude migration tests againt older manual public.* outputs

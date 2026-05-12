@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 import psycopg
 import requests
 from psycopg.types.json import Jsonb
-from config import DATABASE_URL
+from nyc311_manual.config import DATABASE_URL
 
 API_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json"
 
