@@ -1,28 +1,34 @@
 """
 Example trigger config:
 
-Probe run, reset probe, default target_date = ds - 2:
-{
-  "test": true,
-  "reset_probe": true
-}
-
-Probe run, explicit target_date:
+Probe backfill, reset probe:
 {
   "test": true,
   "reset_probe": true,
-  "target_date": "2026-05-10"
+  "start_date": "2024-01-01",
+  "end_date": "2024-01-31"
 }
 
-Production run, default target_date = ds - 2:
+Probe backfill, do not reset probe:
 {
-  "test": false
+  "test": true,
+  "reset_probe": false,
+  "start_date": "2024-01-01",
+  "end_date": "2024-01-31"
+}
+
+Production backfill:
+{
+  "test": false,
+  "start_date": "2024-01-01",
+  "end_date": "2024-01-31"
 }
 """
 
 from __future__ import annotations
 
 from datetime import timedelta
+
 import pendulum
 
 from airflow import DAG
@@ -35,6 +41,7 @@ DBT_BIN = "/Users/janeguo/miniforge3/bin/dbt"
 PYTHON_BIN = f"{PROJECT_DIR}/venv/bin/python"
 
 POOL_NAME = "nyc311_main_warehouse_pool"
+
 
 RAW_TABLE_BASH = """
 TEST_MODE="{{ dag_run.conf.get('test', false) if dag_run else false }}"
@@ -79,21 +86,30 @@ echo "RESET_PROBE=$RESET_PROBE"
 """
 
 
-TARGET_DATE_BASH = """
-TARGET_DATE="{{ dag_run.conf.get('target_date') if dag_run and dag_run.conf.get('target_date') else macros.ds_add(ds, -2) }}"
+DATE_RANGE_BASH = """
+START_DATE="{{ dag_run.conf.get('start_date') if dag_run and dag_run.conf.get('start_date') else '' }}"
+END_DATE="{{ dag_run.conf.get('end_date') if dag_run and dag_run.conf.get('end_date') else '' }}"
 
-echo "TARGET_DATE=$TARGET_DATE"
+if [ -z "$START_DATE" ] || [ -z "$END_DATE" ]; then
+    echo "Missing required backfill date range."
+    echo "Provide both start_date and end_date in dag_run.conf, e.g.:"
+    echo '{"start_date": "2024-01-01", "end_date": "2024-01-31"}'
+    exit 1
+fi
+
+echo "START_DATE=$START_DATE"
+echo "END_DATE=$END_DATE"
 """
 
 
 with DAG(
-    dag_id="nyc311_daily_pipeline",
-    description="Run NYC 311 daily ingestion, validation, and dbt transformations.",
-    start_date=pendulum.datetime(2026, 5, 13, tz="America/New_York"),
-    schedule="30 9 * * *",
-    catchup=True,
+    dag_id="nyc311_backfill_pipeline",
+    description="Manual NYC 311 historical backfill pipeline for a supplied date range.",
+    start_date=pendulum.datetime(2026, 5, 1, tz="America/New_York"),
+    schedule=None,
+    catchup=False,
     max_active_runs=1,
-    tags=["nyc311", "dbt", "analytics-engineering"],
+    tags=["nyc311", "dbt", "analytics-engineering", "backfill"],
 ) as dag:
 
     ensure_raw_tables = BashOperator(
@@ -107,6 +123,7 @@ with DAG(
              -f nyc311_manual/raw/raw.sql
         """,
         pool=POOL_NAME,
+        execution_timeout=timedelta(minutes=10),
     )
 
     reset_probe_raw = BashOperator(
@@ -128,24 +145,26 @@ with DAG(
         fi
         """,
         pool=POOL_NAME,
+        execution_timeout=timedelta(minutes=10),
     )
 
-    ingest_daily = BashOperator(
-        task_id="ingest_daily",
+    ingest_backfill = BashOperator(
+        task_id="ingest_backfill",
         bash_command=f"""
         set -euo pipefail
         cd {PROJECT_DIR}
 
         {RAW_TABLE_BASH}
-        {TARGET_DATE_BASH}
+        {DATE_RANGE_BASH}
 
         {PYTHON_BIN} -m nyc311_manual.ingest.ingest \
-            --target-date "$TARGET_DATE" \
+            --start-date "$START_DATE" \
+            --end-date "$END_DATE" \
             --target-table "$RAW_TABLE"
         """,
         pool=POOL_NAME,
-        execution_timeout=timedelta(hours=2),
-        retries=2,
+        execution_timeout=timedelta(hours=23),
+        retries=0,
     )
 
     validate_raw = BashOperator(
@@ -162,6 +181,7 @@ with DAG(
              -f nyc311_manual/raw/validate_raw.sql
         """,
         pool=POOL_NAME,
+        execution_timeout=timedelta(minutes=30),
     )
 
     dbt_run = BashOperator(
@@ -192,5 +212,4 @@ with DAG(
         execution_timeout=timedelta(hours=1),
     )
 
-    ensure_raw_tables >> reset_probe_raw >> ingest_daily >> validate_raw >> dbt_run >> dbt_test
-    
+    ensure_raw_tables >> reset_probe_raw >> ingest_backfill >> validate_raw >> dbt_run >> dbt_test

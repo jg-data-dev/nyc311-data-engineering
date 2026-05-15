@@ -51,3 +51,6 @@ airflow dags list-runs -d nyc311_daily_pipeline
 <!-- Check task logs -->
 airflow tasks logs nyc311_daily_pipeline dbt_run <run_id>
 Replace <run_id> with the run ID shown by airflow dags list-runs.
+
+<!-- Set airflow pool -->
+airflow pools set nyc311_main_warehouse_pool 1 "Limit NYC 311 main warehouse mutations to one task at a time"

@@ -1,9 +1,8 @@
--- psql -d nyc311 -f sql/validate_stage.sql
+-- psql -d nyc311 -f staging/validate_staging.sql
 
 \echo '== Stage null & unique key check =='
 \set table_name 'stg_311_requests'
-\i common/validate_common.sql
-
+\ir ../common/validate_common.sql
 
 \echo '== Stage row count vs raw =='
 SELECT 'row_count_raw' AS check_name, COUNT(*) AS result

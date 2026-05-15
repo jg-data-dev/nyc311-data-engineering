@@ -1,6 +1,7 @@
 # Setup
 
 This project uses Python, PostgreSQL, and dbt Core.
+The dbt pipeline is now the canonical implementation. The older manual SQL pipeline may differ in internal surrogate key generation and is retained as a reference implementation. Migration/parity tests against public.* are excluded from the normal dbt test run until the manual pipeline is updated or retired.
 
 ## 1. Create virtual environment
 
@@ -78,6 +79,9 @@ From the repository root:
 
 ```bash
 cd nyc311_dbt
+NYC311_RAW_TABLE=raw_311_requests_probe dbt run
+NYC311_RAW_TABLE=raw_311_requests dbt run
+
 dbt debug
 dbt build
 ```

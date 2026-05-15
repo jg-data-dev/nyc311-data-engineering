@@ -128,3 +128,24 @@ Daily Ingestion DAG
 - dbt models runs on the entire selected raw table
 
 - dbt test exclude migration tests againt older manual public.* outputs
+
+
+### Airflow scheduling, backfill, and concurrency
+
+The project includes two Airflow DAGs:
+
+- `nyc311_daily_pipeline`: scheduled daily ingestion and transformation pipeline.
+- `nyc311_backfill_pipeline`: manually triggered historical date-range backfill pipeline.
+
+The daily DAG is scheduled to run at 9:30 AM local time:
+
+```python
+schedule="30 9 * * *"
+
+# Future Production Improvements
+
+incremental dbt models
+backfill DAG/date range support
+cloud warehouse version
+CI for dbt tests
+dashboard or simple metrics output
