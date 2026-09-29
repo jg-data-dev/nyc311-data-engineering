@@ -48,3 +48,14 @@ venv/
 # Jupyter (if you ever use)
 .ipynb_checkpoints/
 
+
+# Virtual environments (any depth)
+.venv/
+
+# Vendored tools / large local artifacts
+google-cloud-sdk/
+*.zip
+*.csv.gz
+
+# dbt per-user state
+.user.yml

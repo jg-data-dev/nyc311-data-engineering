@@ -1,3 +1,7 @@
+# Run
+bash run_pipeline.sh --target-date 2026-05-06
+
+
 # Setup
 
 This project uses Python, PostgreSQL, and dbt Core.
@@ -33,7 +37,7 @@ brew services start postgresql
 ## 4. Create database
 
 ```bash
-createdb nyc311
+createdb nyc311_v1
 ```
 
 Or from `psql`:
@@ -59,7 +63,7 @@ Do not commit credentials or local secrets.
 From the repository root:
 
 ```bash
-cd v1_manual
+cd nyc311_manual
 bash run_pipeline.sh
 ```
 
@@ -78,7 +82,7 @@ The dbt project assumes the raw NYC 311 table already exists in PostgreSQL.
 From the repository root:
 
 ```bash
-cd v2_dbt
+cd nyc311_dbt
 NYC311_RAW_TABLE=raw_311_requests_probe dbt run
 NYC311_RAW_TABLE=raw_311_requests dbt run
 
